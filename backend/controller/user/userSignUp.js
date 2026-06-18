@@ -173,41 +173,43 @@ async function userSignUpController(req, res) {
       </html>
     `;
 
-    const welcomeText = `Xin chào ${name},\n\nCảm ơn bạn đã đăng ký tài khoản tại HTSHOP - Thiết bị công nghệ. Chúng tôi rất vui mừng được chào đón bạn trở thành thành viên của cộng đồng công nghệ hàng đầu Việt Nam.\n\nTruy cập https://htshop.vn để khám phá ngay.\n\nTrân trọng,\nĐội ngũ HTSHOP`;
+    const welcomeText = `Xin chào ${name},\n\nCảm ơn bạn đã đăng ký tài khoản tại HTSHOP - Thiết bị công nghệ. Chúng tôi rất vui mừng được chào đón bạn trở thành thành viên của cộng đồng công nghệ hàng đầu Việt Nam.\n\nTruy cập https://shopht.io.vn để khám phá ngay.\n\nTrân trọng,\nĐội ngũ HTSHOP`;
 
-
-    const mailResult = await sendEmail({
-      to: email,
-      subject: welcomeSubject,
-      text: welcomeText,
-      html: welcomeHtml,
-    });
-    if (!mailResult.success) {
-
-      throw new Error("Không thể gửi email. Vui lòng đăng ký bằng Gmail thật.");
-    }
-
-    const salt = bcrypt.genSaltSync(10);
-    const hashPassword = bcrypt.hashSync(password, salt);
+const salt = await bcrypt.genSalt(10);
+const hashPassword = await bcrypt.hash(password, salt);
     if (!hashPassword) throw new Error("Có gì đó không ổn?");
 
-    const payload = {
-      name,
-      email,
-      role: "Người Dùng",
-      password: hashPassword,
-      isVerified: true,
-    };
+const payload = {
+  name,
+  email,
+  role: "Người Dùng",
+  password: hashPassword,
+  isVerified: true,
+};
 
-    const userData = new userModel(payload);
-    const saveUser = await userData.save();
+const userData = new userModel(payload);
+const saveUser = await userData.save();
 
-    res.status(201).json({
-      data: { _id: saveUser._id, email: saveUser.email, name: saveUser.name },
-      success: true,
-      error: false,
-      message: "Tạo tài khoản thành công!",
-    });
+sendEmail({
+  to: email,
+  subject: welcomeSubject,
+  text: welcomeText,
+  html: welcomeHtml,
+}).catch((err) => {
+  console.error("Email send failed:", err?.message || err);
+});
+
+return res.status(201).json({
+  data: {
+    _id: saveUser._id,
+    email: saveUser.email,
+    name: saveUser.name,
+  },
+  success: true,
+  error: false,
+  message: "Tạo tài khoản thành công!",
+});
+
   } catch (err) {
     res.status(400).json({
       message: err.message || err,

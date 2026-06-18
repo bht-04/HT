@@ -1,31 +1,30 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-transporter.verify((err, success) => {
-  if (err) {
-  } else {
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendEmail({ to, subject, html, text }) {
   try {
-    const info = await transporter.sendMail({
-      from: `"HT - Shop" <${process.env.EMAIL_USER}>`,
+    const data = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
       to,
       subject,
       html,
       text,
     });
-    return { success: true, info };
-  } catch (err) {
-    return { success: false, error: err };
+
+    console.log("Email sent:", data); 
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error("Resend error:", error);
+
+    return {
+      success: false,
+      error,
+    };
   }
 }
 
