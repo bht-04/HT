@@ -11,137 +11,110 @@ import ROLE from "../common/role";
 import Context from "../context";
 
 const Header = () => {
-const context = useContext(Context);
-const navigate = useNavigate();
-const location = useLocation();
+  const context = useContext(Context);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const URLSearch = new URLSearchParams(location.search);
+  const searchQuery = URLSearch.get("ht") || "";
+  const [search, setSearch] = useState(searchQuery);
+  const avatarUpdated = useSelector((state) => state.user.avatarUpdated);
+  const [showSearch, setShowSearch] = useState(false);
 
-const URLSearch = new URLSearchParams(location.search);
-const searchQuery = URLSearch.get("ht") || "";
+  const handleLogout = async () => {
+    const fetchData = await fetch(SummaryApi.logout_user.url, {
+      method: SummaryApi.logout_user.method,
+      credentials: "include",
+    });
 
-const [search, setSearch] = useState(searchQuery);
-const [showSearch, setShowSearch] = useState(false);
-const [menuDisplay, setMenuDisplay] = useState(false);
+    const data = await fetchData.json();
 
-const avatarUpdated = useSelector((state) => state.user.avatarUpdated);
-const user = useSelector((state) => state?.user?.user);
-const tempProfilePic = useSelector(
-  (state) => state?.user?.tempProfilePic
-);
+    if (data.success) {
+      toast.success(data.message);
+      dispatch(setUserDetails(null));
+      navigate("/");
+    }
 
-const dispatch = useDispatch();
+    if (data.error) {
+      toast.success(data.message);
+    }
+  };
 
-const fullText = "Tìm kiếm sản phẩm...";
-const [displayText, setDisplayText] = useState("");
-const [index, setIndex] = useState(0);
-const [isDeleting, setIsDeleting] = useState(false);
+  const user = useSelector((state) => state?.user?.user);
+  const dispatch = useDispatch();
+  const [menuDisplay, setMenuDisplay] = useState(false);
+  const tempProfilePic = useSelector((state) => state?.user?.tempProfilePic);
+  const fullText = "Tìm kiếm sản phẩm...";
+  const [displayText, setDisplayText] = useState("");
+  const [index, setIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-// đóng menu khi chuyển trang
 useEffect(() => {
   setMenuDisplay(false);
-  setShowSearch(false);
 }, [location.pathname]);
 
-// đồng bộ input với URL
 useEffect(() => {
   setSearch(searchQuery);
 }, [searchQuery]);
 
-// hiệu ứng placeholder typing
-useEffect(() => {
-  const delay = isDeleting ? 50 : 100;
-
-  const timer = setTimeout(() => {
-    if (!isDeleting) {
-      setDisplayText(fullText.slice(0, index + 1));
-      setIndex(index + 1);
-
-      if (index === fullText.length) {
-        setTimeout(() => setIsDeleting(true), 1000);
+  useEffect(() => {
+    const delay = isDeleting ? 50 : 100;
+    const interval = setTimeout(() => {
+      if (!isDeleting) {
+        setDisplayText(fullText.slice(0, index + 1));
+        setIndex(index + 1);
+        if (index === fullText.length) {
+          setTimeout(() => setIsDeleting(true), 1000);
+        }
+      } else {
+        setDisplayText(fullText.slice(0, index - 1));
+        setIndex(index - 1);
+        if (index === 0) {
+          setIsDeleting(false);
+        }
       }
-    } else {
-      setDisplayText(fullText.slice(0, index - 1));
-      setIndex(index - 1);
+    }, delay);
+    return () => clearTimeout(interval);
+  }, [index, isDeleting]);
 
-      if (index === 0) {
-        setIsDeleting(false);
-      }
-    }
-  }, delay);
-
-  return () => clearTimeout(timer);
-}, [index, isDeleting]);
-
-const mapRole = (role) => {
-  if (role === "ADMIN") return ROLE.ADMIN;
-  if (role === "GENERAL") return ROLE.GENERAL;
-  return role;
-};
+  const mapRole = (role) => {
+    if (role === "ADMIN") return ROLE.ADMIN;
+    if (role === "GENERAL") return ROLE.GENERAL;
+    return role;
+  };
 
 const handleSearch = (e) => {
-  setSearch(e.target.value);
+  const value = e.target.value;
+
+  setSearch(value);
+
+  navigate(
+    value.trim()
+      ? `/tim-kiem-san-pham?ht=${encodeURIComponent(value)}`
+      : "/tim-kiem-san-pham"
+  );
 };
 
-// debounce search
-useEffect(() => {
-  // chỉ search khi đang ở trang tìm kiếm
-  if (location.pathname !== "/tim-kiem-san-pham") return;
-
-  const timer = setTimeout(() => {
-    const keyword = search.trim();
-
-    navigate(
-      keyword
-        ? `/tim-kiem-san-pham?ht=${encodeURIComponent(keyword)}`
-        : "/tim-kiem-san-pham",
-      { replace: true }
-    );
-  }, 300);
-
-  return () => clearTimeout(timer);
-}, [search, location.pathname, navigate]);
-
-const handleLogout = async () => {
-  const fetchData = await fetch(SummaryApi.logout_user.url, {
-    method: SummaryApi.logout_user.method,
-    credentials: "include",
-  });
-
-  const data = await fetchData.json();
-
-  if (data.success) {
-    toast.success(data.message);
-    dispatch(setUserDetails(null));
-    navigate("/");
-  }
-
-  if (data.error) {
-    toast.error(data.message);
-  }
-};
-
-const fetchUserDetails = async () => {
-  try {
-    const res = await fetch("/api/user/details", {
-      credentials: "include",
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      dispatch(setUserDetails(data.user));
+  const fetchUserDetails = async () => {
+    try {
+      const res = await fetch("/api/user/details", { credentials: "include" });
+      const data = await res.json();
+      if (data.success) {
+        dispatch(setUserDetails(data.user));
+      }
+    } catch (error) {
+      console.error("Lỗi fetch user details:", error);
     }
-  } catch (error) {
-    console.error("Lỗi fetch user details:", error);
-  }
-};
+  };
 
-useEffect(() => {
-  fetchUserDetails();
 
-  if (avatarUpdated) {
-    dispatch(setAvatarUpdated(false));
-  }
-}, [avatarUpdated, dispatch]);
+  useEffect(() => {
+    fetchUserDetails();
+
+
+    if (avatarUpdated) {
+      dispatch(setAvatarUpdated(false));
+    }
+  }, [avatarUpdated]);
   return (
     <>
 
