@@ -13,36 +13,44 @@ import Context from "../context";
 const Header = () => {
 const context = useContext(Context);
 const navigate = useNavigate();
-const searchInput = useLocation();
+const location = useLocation();
 
-const URLSearch = new URLSearchParams(searchInput.search);
+const URLSearch = new URLSearchParams(location.search);
 const searchQuery = URLSearch.get("ht") || "";
 
 const [search, setSearch] = useState(searchQuery);
-const avatarUpdated = useSelector((state) => state.user.avatarUpdated);
 const [showSearch, setShowSearch] = useState(false);
-
-const user = useSelector((state) => state?.user?.user);
-const dispatch = useDispatch();
 const [menuDisplay, setMenuDisplay] = useState(false);
-const tempProfilePic = useSelector((state) => state?.user?.tempProfilePic);
+
+const avatarUpdated = useSelector((state) => state.user.avatarUpdated);
+const user = useSelector((state) => state?.user?.user);
+const tempProfilePic = useSelector(
+  (state) => state?.user?.tempProfilePic
+);
+
+const dispatch = useDispatch();
 
 const fullText = "Tìm kiếm sản phẩm...";
 const [displayText, setDisplayText] = useState("");
 const [index, setIndex] = useState(0);
 const [isDeleting, setIsDeleting] = useState(false);
 
-const location = useLocation();
-
+// đóng menu khi chuyển trang
 useEffect(() => {
   setMenuDisplay(false);
   setShowSearch(false);
 }, [location.pathname]);
 
+// đồng bộ input với URL
+useEffect(() => {
+  setSearch(searchQuery);
+}, [searchQuery]);
+
+// hiệu ứng placeholder typing
 useEffect(() => {
   const delay = isDeleting ? 50 : 100;
 
-  const interval = setTimeout(() => {
+  const timer = setTimeout(() => {
     if (!isDeleting) {
       setDisplayText(fullText.slice(0, index + 1));
       setIndex(index + 1);
@@ -60,7 +68,7 @@ useEffect(() => {
     }
   }, delay);
 
-  return () => clearTimeout(interval);
+  return () => clearTimeout(timer);
 }, [index, isDeleting]);
 
 const mapRole = (role) => {
@@ -73,21 +81,24 @@ const handleSearch = (e) => {
   setSearch(e.target.value);
 };
 
+// debounce search
 useEffect(() => {
+  // chỉ search khi đang ở trang tìm kiếm
+  if (location.pathname !== "/tim-kiem-san-pham") return;
+
   const timer = setTimeout(() => {
-    if (search.trim()) {
-      navigate(`/tim-kiem-san-pham?ht=${search}`, {
-        replace: true,
-      });
-    } else {
-      navigate("/tim-kiem-san-pham", {
-        replace: true,
-      });
-    }
+    const keyword = search.trim();
+
+    navigate(
+      keyword
+        ? `/tim-kiem-san-pham?ht=${encodeURIComponent(keyword)}`
+        : "/tim-kiem-san-pham",
+      { replace: true }
+    );
   }, 300);
 
   return () => clearTimeout(timer);
-}, [search, navigate]);
+}, [search, location.pathname, navigate]);
 
 const handleLogout = async () => {
   const fetchData = await fetch(SummaryApi.logout_user.url, {
@@ -104,7 +115,7 @@ const handleLogout = async () => {
   }
 
   if (data.error) {
-    toast.success(data.message);
+    toast.error(data.message);
   }
 };
 
@@ -130,7 +141,7 @@ useEffect(() => {
   if (avatarUpdated) {
     dispatch(setAvatarUpdated(false));
   }
-}, [avatarUpdated]);
+}, [avatarUpdated, dispatch]);
   return (
     <>
 
