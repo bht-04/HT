@@ -146,7 +146,7 @@ const VerifyOtp = () => {
 
   return (
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 pt-[2vh]">
-      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md transition-all duration-300 hover:shadow-2xl">
+      <div className="bg-white shadow-xl rounded-2xl p-6 sm:p-8 w-full max-w-md transition-all duration-300 hover:shadow-2xl">
         <div className="flex justify-center mb-6">
           <div className="h-16 w-16 rounded-full bg-[#A12B58]/10 flex items-center justify-center">
             <svg
@@ -174,23 +174,22 @@ const VerifyOtp = () => {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex justify-between space-x-2">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength="1"
-                value={digit}
-                onChange={(e) => handleChange(index, e)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                onPaste={handlePaste}
-                ref={(el) => (inputRefs.current[index] = el)}
-                className="w-12 h-12 text-center text-xl font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-[#A12B58] focus:border-transparent transition hover:border-[#A12B58]"
-              />
-            ))}
-          </div>
+<div className="flex justify-center gap-1 sm:gap-2 md:gap-3">
+  {otp.map((digit, index) => (
+    <input
+      key={index}
+      type="text"
+      inputMode="numeric"
+      maxLength="1"
+      value={digit}
+      onChange={(e) => handleChange(index, e)}
+      onKeyDown={(e) => handleKeyDown(index, e)}
+      onPaste={handlePaste}
+      ref={(el) => (inputRefs.current[index] = el)}
+      className="w-10 h-10 sm:w-12 sm:h-12 text-center text-lg sm:text-xl font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A12B58]"
+    />
+  ))}
+</div>
 
           <button
             type="submit"
